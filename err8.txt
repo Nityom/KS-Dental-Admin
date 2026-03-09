@@ -1,0 +1,42 @@
+﻿app/admin/consumable-settings/page.tsx(108,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<number | null>'.
+app/admin/consumable-settings/page.tsx(129,30): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+app/admin/consumable-settings/page.tsx(146,30): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+app/admin/consumable-settings/page.tsx(349,85): error TS2367: This comparison appears to be unintentional because the types 'number | null' and 'string | undefined' have no overlap.
+app/admin/consumable-settings/page.tsx(351,32): error TS2367: This comparison appears to be unintentional because the types 'number | null' and 'string | undefined' have no overlap.
+app/admin/consumable-settings/page.tsx(361,32): error TS2367: This comparison appears to be unintentional because the types 'number | null' and 'string | undefined' have no overlap.
+app/admin/consumable-settings/page.tsx(423,32): error TS2367: This comparison appears to be unintentional because the types 'number | null' and 'string | undefined' have no overlap.
+app/admin/consumable-settings/page.tsx(434,32): error TS2367: This comparison appears to be unintentional because the types 'number | null' and 'string | undefined' have no overlap.
+app/admin/consumable-settings/page.tsx(458,32): error TS2367: This comparison appears to be unintentional because the types 'number | null' and 'string | undefined' have no overlap.
+app/admin/consumable-settings/page.tsx(462,67): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+app/admin/consumable-settings/page.tsx(492,65): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+app/admin/prescription/page.tsx(539,32): error TS2339: Property 'id' does not exist on type 'string & { __tableName: "prescriptions"; }'.
+app/admin/prescription/page.tsx(540,47): error TS2339: Property 'id' does not exist on type 'string & { __tableName: "prescriptions"; }'.
+app/admin/prescription/page.tsx(546,54): error TS2339: Property 'id' does not exist on type '(string & { __tableName: "prescriptions"; }) | Prescription'.
+  Property 'id' does not exist on type 'string & { __tableName: "prescriptions"; }'.
+app/admin/prescription/page.tsx(583,56): error TS2339: Property 'id' does not exist on type '(string & { __tableName: "prescriptions"; }) | Prescription'.
+  Property 'id' does not exist on type 'string & { __tableName: "prescriptions"; }'.
+app/admin/prescription/page.tsx(627,45): error TS2339: Property 'id' does not exist on type '(string & { __tableName: "prescriptions"; }) | Prescription'.
+  Property 'id' does not exist on type 'string & { __tableName: "prescriptions"; }'.
+app/admin/prescription/page.tsx(662,58): error TS2339: Property 'id' does not exist on type '(string & { __tableName: "prescriptions"; }) | Prescription'.
+  Property 'id' does not exist on type 'string & { __tableName: "prescriptions"; }'.
+app/admin/prescription/page.tsx(715,85): error TS2339: Property 'id' does not exist on type '(string & { __tableName: "prescriptions"; }) | Prescription'.
+  Property 'id' does not exist on type 'string & { __tableName: "prescriptions"; }'.
+app/admin/prescription/page.tsx(757,48): error TS2339: Property 'id' does not exist on type '(string & { __tableName: "prescriptions"; }) | Prescription'.
+  Property 'id' does not exist on type 'string & { __tableName: "prescriptions"; }'.
+components/BillForm.tsx(311,32): error TS2339: Property 'id' does not exist on type '{ _id: Id<"bills">; _creationTime: number; notes?: string | undefined; reference_number: string; prescription_id: string; patient_id: string; total_amount: number; paid_amount: number; balance_amount: number; payment_status: "PENDING" | ... 1 more ... | "PAID"; items: any; } | (string & { ...; })'.
+  Property 'id' does not exist on type '{ _id: Id<"bills">; _creationTime: number; notes?: string | undefined; reference_number: string; prescription_id: string; patient_id: string; total_amount: number; paid_amount: number; balance_amount: number; payment_status: "PENDING" | ... 1 more ... | "PAID"; items: any; }'.
+components/BillForm.tsx(314,48): error TS2339: Property 'items' does not exist on type '{ _id: Id<"bills">; _creationTime: number; notes?: string | undefined; reference_number: string; prescription_id: string; patient_id: string; total_amount: number; paid_amount: number; balance_amount: number; payment_status: "PENDING" | ... 1 more ... | "PAID"; items: any; } | (string & { ...; })'.
+  Property 'items' does not exist on type 'string & { __tableName: "bills"; }'.
+components/BillForm.tsx(316,21): error TS2339: Property 'items' does not exist on type '{ _id: Id<"bills">; _creationTime: number; notes?: string | undefined; reference_number: string; prescription_id: string; patient_id: string; total_amount: number; paid_amount: number; balance_amount: number; payment_status: "PENDING" | ... 1 more ... | "PAID"; items: any; } | (string & { ...; })'.
+  Property 'items' does not exist on type 'string & { __tableName: "bills"; }'.
+components/BillForm.tsx(327,38): error TS2339: Property 'items' does not exist on type '{ _id: Id<"bills">; _creationTime: number; notes?: string | undefined; reference_number: string; prescription_id: string; patient_id: string; total_amount: number; paid_amount: number; balance_amount: number; payment_status: "PENDING" | ... 1 more ... | "PAID"; items: any; } | (string & { ...; })'.
+  Property 'items' does not exist on type 'string & { __tableName: "bills"; }'.
+components/BillForm.tsx(333,51): error TS2339: Property 'paid_amount' does not exist on type '{ _id: Id<"bills">; _creationTime: number; notes?: string | undefined; reference_number: string; prescription_id: string; patient_id: string; total_amount: number; paid_amount: number; balance_amount: number; payment_status: "PENDING" | ... 1 more ... | "PAID"; items: any; } | (string & { ...; })'.
+  Property 'paid_amount' does not exist on type 'string & { __tableName: "bills"; }'.
+components/BillForm.tsx(334,36): error TS2339: Property 'payment_status' does not exist on type '{ _id: Id<"bills">; _creationTime: number; notes?: string | undefined; reference_number: string; prescription_id: string; patient_id: string; total_amount: number; paid_amount: number; balance_amount: number; payment_status: "PENDING" | ... 1 more ... | "PAID"; items: any; } | (string & { ...; })'.
+  Property 'payment_status' does not exist on type 'string & { __tableName: "bills"; }'.
+components/BillSaveButton.tsx(58,15): error TS2304: Cannot find name 'supabase'.
+components/BillSaveButton.tsx(132,38): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+convex/bills.ts(72,13): error TS7053: Element implicitly has an 'any' type because expression of type '"balance_amount"' can't be used to index type '{ total_amount?: number | undefined; paid_amount?: number | undefined; payment_status?: "PENDING" | "PARTIAL" | "PAID" | undefined; items?: any; notes?: string | undefined; }'.
+  Property 'balance_amount' does not exist on type '{ total_amount?: number | undefined; paid_amount?: number | undefined; payment_status?: "PENDING" | "PARTIAL" | "PAID" | undefined; items?: any; notes?: string | undefined; }'.
