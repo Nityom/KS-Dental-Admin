@@ -84,6 +84,8 @@ export const updateBill = async (id: string, bill: Partial<Bill>) => {
     if (bill.items !== undefined) validUpdate.items = bill.items;
     if (bill.notes !== undefined) validUpdate.notes = bill.notes;
     if (bill.payment_status !== undefined) validUpdate.payment_status = bill.payment_status;
+    if (bill.discount_percent !== undefined) validUpdate.discount_percent = bill.discount_percent;
+    if (bill.discount_amount !== undefined) validUpdate.discount_amount = bill.discount_amount;
 
     const data = await convex.mutation(api.bills.update, validUpdate as any);
     return { ...data, id: data?._id } as any as Bill;

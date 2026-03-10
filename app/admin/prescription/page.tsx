@@ -11,6 +11,13 @@ import { getCurrentUser } from '@/services/adminuser';
 import { createBill, Bill, getBillByPrescriptionId, updateBill } from '@/services/bills';
 import { deductInventoryStock, recordInventorySale } from '@/services/inventory';
 import { getEnabledConsumablesForDeduction } from '@/services/consumables';
+import { ConvexHttpClient } from 'convex/browser';
+// @ts-ignore
+import { api } from '@/convex/_generated/api';
+
+const convexClient = new ConvexHttpClient(
+  process.env.NEXT_PUBLIC_CONVEX_URL || 'https://laudable-pony-598.convex.cloud'
+);
 
 interface MedicineEntry {
   name: string;
@@ -182,7 +189,8 @@ const PrescriptionPage = () => {
   const [currentBill, setCurrentBill] = useState<any>(null);
   const [paymentDetails, setPaymentDetails] = useState({
     amountPaid: 0,
-    paymentMethod: 'Cash'
+    paymentMethod: 'Cash',
+    discountPercent: 0,
   });
 
   useEffect(() => {
@@ -252,6 +260,16 @@ const PrescriptionPage = () => {
 
           // Set patient reference number
           setPatientReferenceNumber(existingPatient.reference_number);
+
+          // Prefill M/H from the latest prescription for this patient
+          try {
+            const latestRx = await convexClient.query(api.prescriptions.getLatestByPhone, { phone_number: phoneNumber });
+            if (latestRx && latestRx.medical_history) {
+              setFormData(prevData => ({ ...prevData, mh: latestRx.medical_history }));
+            }
+          } catch (rxError) {
+            console.error('Error fetching latest prescription for M/H prefill:', rxError);
+          }
 
           console.log('Patient found and data auto-populated:', existingPatient);
         }
@@ -946,7 +964,8 @@ const PrescriptionPage = () => {
       setCurrentBill(bill);
       setPaymentDetails({
         amountPaid: bill.paid_amount || 0,
-        paymentMethod: bill.payment_method || 'Cash'
+        paymentMethod: bill.payment_method || 'Cash',
+        discountPercent: bill.discount_percent || 0,
       });
 
       // Show payment modal
@@ -963,9 +982,16 @@ const PrescriptionPage = () => {
 
     try {
       // Update bill with payment details
+      const discountAmt = Math.round((Number(currentBill.total_amount) * paymentDetails.discountPercent) / 100);
+      const newTotal = Math.round(Number(currentBill.total_amount) - discountAmt);
+      const safePaid = Math.round(Math.min(Math.max(paymentDetails.amountPaid, 0), newTotal));
       await updateBill(currentBill.id, {
-        paid_amount: paymentDetails.amountPaid,
-        payment_method: paymentDetails.paymentMethod
+        paid_amount: safePaid,
+        payment_method: paymentDetails.paymentMethod,
+        discount_percent: paymentDetails.discountPercent,
+        discount_amount: discountAmt,
+        total_amount: newTotal,
+        balance_amount: Math.max(newTotal - safePaid, 0),
       });
 
       // Close modal
@@ -1889,9 +1915,35 @@ const PrescriptionPage = () => {
               <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
                 <h3 className="text-xl font-bold mb-4 text-gray-800">Payment Details</h3>
 
+                {(() => {
+                  const origTotal = Number(currentBill.total_amount);
+                  const discAmt = Math.round((origTotal * paymentDetails.discountPercent) / 100);
+                  const payable = Math.round(origTotal - discAmt);
+                  const balance = Math.max(payable - Math.round(paymentDetails.amountPaid), 0);
+                  return (
+                    <div className="mb-4">
+                      <p className="text-sm text-gray-600 mb-1">Total Amount: <span className="font-bold text-gray-900">₹{origTotal.toLocaleString('en-IN')}</span></p>
+                      {paymentDetails.discountPercent > 0 && (
+                        <p className="text-sm text-gray-600 mb-1">Discount ({paymentDetails.discountPercent}%): <span className="font-bold text-green-600">- ₹{discAmt.toLocaleString('en-IN')}</span></p>
+                      )}
+                      <p className="text-sm text-gray-600 mb-1">Payable: <span className="font-bold text-gray-900">₹{payable.toLocaleString('en-IN')}</span></p>
+                      <p className="text-sm text-gray-600 mb-4">Balance Due: <span className="font-bold text-red-600">₹{balance.toLocaleString('en-IN')}</span></p>
+                    </div>
+                  );
+                })()}
+
                 <div className="mb-4">
-                  <p className="text-sm text-gray-600 mb-2">Total Amount: <span className="font-bold text-gray-900">₹{Number(currentBill.total_amount).toFixed(2)}</span></p>
-                  <p className="text-sm text-gray-600 mb-4">Balance Due: <span className="font-bold text-red-600">₹{(Number(currentBill.total_amount) - paymentDetails.amountPaid).toFixed(2)}</span></p>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Discount (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={paymentDetails.discountPercent}
+                    onChange={(e) => setPaymentDetails({ ...paymentDetails, discountPercent: Math.min(Math.max(parseFloat(e.target.value) || 0, 0), 100) })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0"
+                  />
                 </div>
 
                 <div className="mb-4">
@@ -1899,10 +1951,14 @@ const PrescriptionPage = () => {
                   <input
                     type="number"
                     min="0"
-                    max={Number(currentBill.total_amount)}
-                    step="0.01"
+                    max={Math.round(Number(currentBill.total_amount) - Math.round((Number(currentBill.total_amount) * paymentDetails.discountPercent) / 100))}
+                    step="1"
                     value={paymentDetails.amountPaid}
-                    onChange={(e) => setPaymentDetails({ ...paymentDetails, amountPaid: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => {
+                      const payable = Math.round(Number(currentBill.total_amount) - Math.round((Number(currentBill.total_amount) * paymentDetails.discountPercent) / 100));
+                      const val = Math.round(Math.min(Math.max(parseFloat(e.target.value) || 0, 0), payable));
+                      setPaymentDetails({ ...paymentDetails, amountPaid: val });
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
@@ -1925,14 +1981,12 @@ const PrescriptionPage = () => {
                 <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm font-medium text-gray-700">
                     Payment Status:
-                    <span className={`ml-2 px-2 py-1 rounded text-xs font-bold ${paymentDetails.amountPaid === 0 ? 'bg-red-100 text-red-700' :
-                      paymentDetails.amountPaid >= Number(currentBill.total_amount) ? 'bg-green-100 text-green-700' :
-                        'bg-yellow-100 text-yellow-700'
-                      }`}>
-                      {paymentDetails.amountPaid === 0 ? 'PENDING' :
-                        paymentDetails.amountPaid >= Number(currentBill.total_amount) ? 'PAID' :
-                          'PARTIAL'}
-                    </span>
+                    {(() => {
+                      const payable = Math.round(Number(currentBill.total_amount) - Math.round((Number(currentBill.total_amount) * paymentDetails.discountPercent) / 100));
+                      const status = paymentDetails.amountPaid === 0 ? 'PENDING' : paymentDetails.amountPaid >= payable ? 'PAID' : 'PARTIAL';
+                      const cls = status === 'PENDING' ? 'bg-red-100 text-red-700' : status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
+                      return <span className={`ml-2 px-2 py-1 rounded text-xs font-bold ${cls}`}>{status}</span>;
+                    })()}
                   </p>
                 </div>
 

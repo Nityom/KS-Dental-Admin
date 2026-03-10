@@ -10,6 +10,8 @@ export const create = mutation({
         paid_amount: v.number(),
         items: v.any(),
         notes: v.optional(v.string()),
+        discount_percent: v.optional(v.number()),
+        discount_amount: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
         let payment_status: "PENDING" | "PARTIAL" | "PAID" = "PENDING";
@@ -33,6 +35,8 @@ export const create = mutation({
             payment_status,
             items: args.items,
             notes: args.notes,
+            discount_percent: args.discount_percent,
+            discount_amount: args.discount_amount,
         });
         return newBillId;
     },
@@ -78,6 +82,8 @@ export const update = mutation({
         items: v.optional(v.any()),
         notes: v.optional(v.string()),
         payment_status: v.optional(v.union(v.literal("PENDING"), v.literal("PARTIAL"), v.literal("PAID"))),
+        discount_percent: v.optional(v.number()),
+        discount_amount: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
         const { id, ...updates } = args;

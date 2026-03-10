@@ -52,7 +52,7 @@ const PrintableBill: React.FC<PrintableBillProps> = ({
   }, []);
 
   const formatCurrency = (amount: number) => {
-    return `₹ ${amount.toLocaleString('en-IN')}`;
+    return `₹ ${Math.round(amount).toLocaleString('en-IN')}`;
   };
 
   const numberToWords = (num: number): string => {

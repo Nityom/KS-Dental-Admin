@@ -51,6 +51,8 @@ export default defineSchema({
     payment_status: v.union(v.literal("PENDING"), v.literal("PARTIAL"), v.literal("PAID")),
     items: v.any(), // JSON
     notes: v.optional(v.string()),
+    discount_percent: v.optional(v.number()),
+    discount_amount: v.optional(v.number()),
   })
     .index("by_prescription", ["prescription_id"])
     .index("by_patient", ["patient_id"])

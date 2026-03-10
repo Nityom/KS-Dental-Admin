@@ -1,6 +1,6 @@
-// app/api/generate-prescription/route.ts
+﻿// app/api/generate-prescription/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { PDFDocument, StandardFonts, rgb, PDFPage, PDFFont } from 'pdf-lib';
+import { PDFDocument, StandardFonts, rgb, PDFFont, PDFPage } from 'pdf-lib';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -15,7 +15,7 @@ interface MedicineEntry {
   name: string;
   dosage: string;
   duration: string;
-  quantity?: number; // Quantity to dispense
+  quantity?: number;
 }
 
 interface PrescriptionData {
@@ -23,374 +23,259 @@ interface PrescriptionData {
   age: string;
   sex: string;
   date: string;
-  cc: string;  // Chief Complaint
-  mh: string;  // Medical/Dental History
-  de: string;  // Diagnosis
+  cc: string;
+  mh: string;
+  de: string;
   advice: string;
   followupDate: string;
   medicines?: MedicineEntry[];
-  // New fields from form
-  dentalNotation: string;   // Formatted string of selected teeth
-  clinicalNotes: string;    // Combined diagnosis and oral exam notes
+  dentalNotation: string;
+  clinicalNotes: string;
   selectedTeeth: ToothData[];
-  investigation?: string;   // Investigation/Tests
-  treatmentPlan?: string[]; // Treatment plan steps
+  investigation?: string;
+  treatmentPlan?: string[];
+  referenceNumber?: string;
+}
+
+// A4 dimensions in points
+const PAGE_W = 595.28;
+const PAGE_H = 841.89;
+const MARGIN_L = 50;
+const MARGIN_R = 50;
+const CONTENT_W = PAGE_W - MARGIN_L - MARGIN_R;
+
+function wrapText(text: string, font: PDFFont, size: number, maxW: number): string[] {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (font.widthOfTextAtSize(test, size) <= maxW) {
+      line = test;
+    } else {
+      if (line) lines.push(line);
+      line = word;
+    }
+  }
+  if (line) lines.push(line);
+  return lines.length ? lines : [''];
+}
+
+function drawWrappedText(
+  page: PDFPage,
+  text: string,
+  x: number,
+  y: number,
+  font: PDFFont,
+  size: number,
+  maxW: number,
+  lineH: number,
+  color = rgb(0, 0, 0)
+): number {
+  const lines = wrapText(text, font, size, maxW);
+  for (const line of lines) {
+    page.drawText(line, { x, y, size, font, color });
+    y -= lineH;
+  }
+  return y;
+}
+
+function formatDate(d: string): string {
+  if (!d) return '';
+  const dt = new Date(d);
+  return isNaN(dt.getTime()) ? d : dt.toLocaleDateString('en-GB');
 }
 
 export async function POST(req: NextRequest) {
   try {
-    // Log the request details for debugging
-    console.log('Prescription API called');
-    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
-    
     const data: PrescriptionData = await req.json();
-    console.log('Received prescription data:', data);
-    
-    // Load the template PDF
-    const templatePath = path.join(process.cwd(), 'public', 'prescription-template1.pdf');
-    const medicineTemplatePath = path.join(process.cwd(), 'public', 'prescription-template2.pdf');
 
-    // Check if template files exist
-    try {
-      await fs.access(templatePath);
-      await fs.access(medicineTemplatePath);
-    } catch (fileError) {
-      console.error('Template files not found:', fileError);
-      return NextResponse.json(
-        { error: 'PDF template files not found' },
-        { status: 500 }
-      );
-    }
-
-    // Load both templates
-    const templateBytes = await fs.readFile(templatePath);
-    const medicineTemplateBytes = await fs.readFile(medicineTemplatePath);
-    
-    // Load the first PDF document
-    const pdfDoc = await PDFDocument.load(templateBytes);
-    const firstPage = pdfDoc.getPages()[0];
-    
-    // Load the medicine template
-    const medicineDoc = await PDFDocument.load(medicineTemplateBytes);
-    const [medicinePage] = await pdfDoc.copyPages(medicineDoc, [0]);
-    pdfDoc.addPage(medicinePage);
-
-    let currentPage = medicinePage;
-    let yPosition = currentPage.getHeight() - 100;
-    
-    // Embed a standard font
-    const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    
-    // Text properties
-    const textSize = 12;
-    const textColor = rgb(0, 0, 0);
-      // Format date
-    const formattedDate = new Date(data.date).toLocaleDateString('en-GB', { 
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-    
-    // Patient details - Patient name (maintain existing position)
-    firstPage.drawText(data.patientName, {
-      x: 280,
-      y: firstPage.getHeight() - 183,
-      size: textSize,
-      font: regularFont,
-      color: textColor
-    });
-    
-    // Age (maintain existing position)
-    firstPage.drawText(data.age, {
-      x: 201,
-      y: firstPage.getHeight() - 218,
-      size: textSize,
-      font: regularFont,
-      color: textColor
-    });
-    
-    // Sex (maintain existing position)
-    firstPage.drawText(data.sex, {
-      x: 345,
-      y: firstPage.getHeight() - 218,
-      size: textSize,
-      font: regularFont,
-      color: textColor
-    });
-    
-    // Date (maintain existing position)
-    firstPage.drawText(formattedDate, {
-      x: 511,
-      y: firstPage.getHeight() - 183,
-      size: textSize,
-      font: regularFont,
-      color: textColor
-    });
-    
-    // Medical information - Chief Complaint (maintain existing position)
-    firstPage.drawText(data.cc || 'N/A', {
-      x: 197,
-      y: firstPage.getHeight() - 258,
-      size: textSize,
-      font: regularFont,
-      color: textColor
-    });
-    
-    // Medical/Dental History (maintain existing position)
-    firstPage.drawText(data.mh || 'N/A', {
-      x: 197,
-      y: firstPage.getHeight() - 296,
-      size: textSize,
-      font: regularFont,
-      color: textColor
-    });
-    
-    // Define maximum width for text wrapping
-    const maxWidth = 340;
-    
-    // Investigation (optional field - add after M/H if provided)
-    if (data.investigation && data.investigation.trim()) {
-      const investigationLines = splitTextIntoLines(data.investigation, regularFont, textSize, maxWidth);
-      investigationLines.forEach((line, index) => {
-        firstPage.drawText(line, {
-          x: 197,
-          y: firstPage.getHeight() - 324 - (index * 18),
-          size: textSize,
-          font: regularFont,
-          color: textColor
-        });
-      });
-    }
-    
-    // Oral Examination (O/E) - This replaces the Diagnosis field in the PDF template
-    let oralExamText = 'None';
-    
-    // Handle teeth information for prescription
+    // Build teeth string
     if (data.selectedTeeth && data.selectedTeeth.length > 0) {
       const teethInfo = data.selectedTeeth.map(tooth => {
-        const toothId = tooth.id.toString();
-        const quadrant = toothId[0];
-        const number = parseInt(toothId.slice(1));
-        
-        // Convert numbers 9-13 to letters A-E directly
-        let displayId;
-        if (number >= 9 && number <= 13) {
-          const letterIndex = number - 9; // 9->0, 10->1, 11->2, etc.
-          const letter = String.fromCharCode('A'.charCodeAt(0) + letterIndex);
-          displayId = `${quadrant}${letter}`;
-        } else {
-          displayId = toothId;
-        }
-    
-        return `#${displayId} (${tooth.disease})`;
+        const id = tooth.id.toString();
+        const q = id[0];
+        const n = parseInt(id.slice(1));
+        const disp = n >= 9 && n <= 13
+          ? `${q}${String.fromCharCode('A'.charCodeAt(0) + n - 9)}`
+          : id;
+        return `#${disp} (${tooth.disease || tooth.type})`;
       }).join('; ');
-    
-      // Update dental notation with converted IDs
       data.dentalNotation = teethInfo;
     }
 
-    // Prepare oral examination text with teeth information and clinical notes
-    if (data.dentalNotation || data.clinicalNotes) {
-      const teethInfo = data.dentalNotation ? `Teeth involved: ${data.dentalNotation}` : '';
-      const clinicalInfo = data.clinicalNotes || '';
-      
-      if (teethInfo && clinicalInfo) {
-        oralExamText = `${teethInfo}; ${clinicalInfo}`;
-      } else {
-        oralExamText = teethInfo || clinicalInfo;
-      }
+    // Load sign.png
+    const signPath = path.join(process.cwd(), 'public', 'sign.png');
+    let signImageBytes: Uint8Array | null = null;
+    try {
+      signImageBytes = await fs.readFile(signPath);
+    } catch {
+      // sign.png not found, skip
     }
-    
-    // Handle the Oral Examination text with proper wrapping
-    const oralExamLines = splitTextIntoLines(oralExamText, regularFont, textSize, maxWidth);
-    const yPos = firstPage.getHeight() - 324;
-    
-    // Draw each line of the oral examination text
-    oralExamLines.forEach((line, index) => {
-      firstPage.drawText(line, {
-        x: 197,
-        y: yPos - (index * 20), // 20 pixels between lines
-        size: textSize,
-        font: regularFont,
-        color: textColor
-      });
+
+    const pdfDoc = await PDFDocument.create();
+    const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    let signImage = null;
+    if (signImageBytes) {
+      signImage = await pdfDoc.embedPng(signImageBytes);
+    }
+
+    const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+    let y = PAGE_H - 40;
+
+    // Header
+    const clinicName = 'Ekdant Dental Clinic';
+    const clinicNameW = boldFont.widthOfTextAtSize(clinicName, 18);
+    page.drawText(clinicName, {
+      x: (PAGE_W - clinicNameW) / 2, y,
+      size: 18, font: boldFont, color: rgb(0.1, 0.1, 0.5),
     });
-    
-    // Add "Medicines" header
-    // currentPage.drawText('Medicines:', {
-    //   x: 160,
-    //   y: yPosition - 120,
-    //   size: textSize + 2,
-    //   font: regularFont,
-    //   color: textColor
-    // });
+    y -= 22;
 
-    yPosition -= 140; // Space after header
-
-    // Medicines entries
-    // Adjust these coordinates for better spacing
-    const xMedicineName = 160;
-    const xDosage = 357;     
-    const xDuration = 492;   
-    const lineSpacing = 28; // Define line spacing for medicine rows
-
-    // Add column headers
-    currentPage.drawText('Medicine name', {
-      x: xMedicineName,
-      y: yPosition + 40,
-      size: textSize,
-      font: regularFont,
-      color: textColor
+    const subtitle = 'Prescription';
+    const subtitleW = regularFont.widthOfTextAtSize(subtitle, 11);
+    page.drawText(subtitle, {
+      x: (PAGE_W - subtitleW) / 2, y,
+      size: 11, font: regularFont, color: rgb(0.3, 0.3, 0.3),
     });
+    y -= 14;
 
-    currentPage.drawText('Dosage', {
-      x: xDosage,
-      y: yPosition + 40,
-      size: textSize,
-      font: regularFont,
-      color: textColor
-    });
+    page.drawLine({ start: { x: MARGIN_L, y }, end: { x: PAGE_W - MARGIN_R, y }, thickness: 1.5, color: rgb(0, 0, 0) });
+    y -= 14;
 
-    currentPage.drawText('Duration', {
-      x: xDuration,
-      y: yPosition + 40,
-      size: textSize,
-      font: regularFont,
-      color: textColor
-    });
+    // Patient info grid
+    const sz = 10;
+    const lh = 16;
+    const col1x = MARGIN_L + 4;
+    const col2x = MARGIN_L + CONTENT_W / 2;
+    const lblW = 100;
 
-    // In your medicines section, replace the existing medicine drawing code with:
-    if (data.medicines && Array.isArray(data.medicines)) {
-      for (const medicine of data.medicines) {
-        // Check if we need another page
-        if (yPosition < 180) {
-          // Create new page from template
-          const [newPage] = await pdfDoc.copyPages(medicineDoc, [0]);
-          pdfDoc.addPage(newPage);
-          currentPage = newPage;
-          yPosition = currentPage.getHeight() - 100;
+    const infoRows: [string, string, string, string][] = [
+      ['Patient Name', data.patientName, 'Reg. No.', data.referenceNumber || '—'],
+      ['Age', data.age, 'Date', formatDate(data.date)],
+      ['Sex', data.sex, 'Contact', '—'],
+    ];
+    if (data.followupDate) {
+      infoRows.push(['Visit Type', 'Consultation', 'Follow-up', formatDate(data.followupDate)]);
+    }
+
+    for (const [l1, v1, l2, v2] of infoRows) {
+      page.drawText(`${l1}:`, { x: col1x, y, size: sz, font: boldFont, color: rgb(0, 0, 0) });
+      page.drawText(v1, { x: col1x + lblW, y, size: sz, font: regularFont, color: rgb(0, 0, 0) });
+      page.drawText(`${l2}:`, { x: col2x, y, size: sz, font: boldFont, color: rgb(0, 0, 0) });
+      page.drawText(v2, { x: col2x + lblW, y, size: sz, font: regularFont, color: rgb(0, 0, 0) });
+      y -= lh;
+    }
+    y -= 4;
+
+    page.drawLine({ start: { x: MARGIN_L, y }, end: { x: PAGE_W - MARGIN_R, y }, thickness: 1.5, color: rgb(0, 0, 0) });
+    y -= 14;
+
+    // Section helpers
+    const SH = 11;
+    const SB = 10;
+    const SLH = 15;
+
+    function drawSection(heading: string, text: string) {
+      page.drawText(heading, { x: MARGIN_L, y, size: SH, font: boldFont, color: rgb(0, 0, 0) });
+      const hw = boldFont.widthOfTextAtSize(heading, SH);
+      page.drawLine({ start: { x: MARGIN_L, y: y - 1 }, end: { x: MARGIN_L + hw, y: y - 1 }, thickness: 0.8, color: rgb(0, 0, 0) });
+      y -= SH + 4;
+      y = drawWrappedText(page, text, MARGIN_L + 16, y, regularFont, SB, CONTENT_W - 20, SLH);
+      y -= 6;
+    }
+
+    if (data.de) drawSection('DIAGNOSIS', data.de);
+    if (data.cc) drawSection('CHIEF COMPLAINT', data.cc);
+    if (data.mh) drawSection('MEDICAL HISTORY', data.mh);
+
+    const oralParts: string[] = [];
+    if (data.dentalNotation) oralParts.push(`Teeth involved: ${data.dentalNotation}`);
+    if (data.clinicalNotes) oralParts.push(data.clinicalNotes);
+    if (oralParts.length > 0) drawSection('ORAL EXAMINATION', oralParts.join('; '));
+
+    if (data.investigation) drawSection('INVESTIGATION', data.investigation);
+
+    if (data.treatmentPlan && data.treatmentPlan.length > 0) {
+      drawSection('TREATMENT PLAN', data.treatmentPlan.map((s, i) => `${i + 1}. ${s}`).join('\n'));
+    }
+
+    // Medications table
+    if (data.medicines && data.medicines.length > 0) {
+      page.drawText('MEDICATIONS', { x: MARGIN_L, y, size: SH, font: boldFont, color: rgb(0, 0, 0) });
+      const mhw = boldFont.widthOfTextAtSize('MEDICATIONS', SH);
+      page.drawLine({ start: { x: MARGIN_L, y: y - 1 }, end: { x: MARGIN_L + mhw, y: y - 1 }, thickness: 0.8, color: rgb(0, 0, 0) });
+      y -= SH + 6;
+
+      const colSno = MARGIN_L;
+      const colName = MARGIN_L + 30;
+      const colDos = MARGIN_L + 280;
+      const colDur = MARGIN_L + 390;
+      const tableRight = PAGE_W - MARGIN_R;
+      const rowH = 18;
+
+      page.drawRectangle({ x: colSno, y: y - 2, width: CONTENT_W, height: rowH, color: rgb(0.85, 0.85, 0.85) });
+      page.drawRectangle({ x: colSno, y: y - 2, width: CONTENT_W, height: rowH, borderColor: rgb(0, 0, 0), borderWidth: 0.5 });
+      page.drawText('#', { x: colSno + 4, y: y + 4, size: 9, font: boldFont, color: rgb(0, 0, 0) });
+      page.drawText('Medication', { x: colName + 4, y: y + 4, size: 9, font: boldFont, color: rgb(0, 0, 0) });
+      page.drawText('Dosage', { x: colDos + 4, y: y + 4, size: 9, font: boldFont, color: rgb(0, 0, 0) });
+      page.drawText('Duration', { x: colDur + 4, y: y + 4, size: 9, font: boldFont, color: rgb(0, 0, 0) });
+      for (const cx of [colName, colDos, colDur, tableRight]) {
+        page.drawLine({ start: { x: cx, y: y - 2 }, end: { x: cx, y: y + rowH - 2 }, thickness: 0.5, color: rgb(0, 0, 0) });
+      }
+      y -= rowH;
+
+      for (let i = 0; i < data.medicines.length; i++) {
+        const med = data.medicines[i];
+        const nameLines = wrapText(med.name, regularFont, 9, colDos - colName - 10);
+        const rowHeight = Math.max(rowH, nameLines.length * 13 + 6);
+
+        page.drawRectangle({ x: colSno, y: y - rowHeight + rowH, width: CONTENT_W, height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 0.5 });
+        for (const cx of [colName, colDos, colDur, tableRight]) {
+          page.drawLine({ start: { x: cx, y: y - rowHeight + rowH }, end: { x: cx, y: y + 2 }, thickness: 0.5, color: rgb(0, 0, 0) });
         }
-
-        // Draw all information in one line
-        currentPage.drawText(medicine.name, {
-          x: xMedicineName,
-          y: yPosition,
-          size: textSize,
-          font: regularFont,
-          color: textColor
-        });
-        
-        currentPage.drawText(medicine.dosage, {
-          x: xDosage,
-          y: yPosition,  // Same y position as medicine name
-          size: textSize,
-          font: regularFont,
-          color: textColor
-        });
-        
-        currentPage.drawText(medicine.duration, {
-          x: xDuration,
-          y: yPosition,  // Same y position as medicine name
-          size: textSize,
-          font: regularFont,
-          color: textColor
-        });
-        
-        yPosition -= lineSpacing;  // Move to next line after drawing all three items
-      }
-    }
-
-    // Add Treatment Plan section if provided
-    if (data.treatmentPlan && Array.isArray(data.treatmentPlan) && data.treatmentPlan.length > 0) {
-      yPosition -= 50; // Add space before treatment plan
-      
-      // Check if we have enough space for treatment plan
-      if (yPosition < 250) {
-        const [newPage] = await pdfDoc.copyPages(medicineDoc, [0]);
-        pdfDoc.addPage(newPage);
-        currentPage = newPage;
-        yPosition = currentPage.getHeight() - 100;
-      }
-      
-      currentPage.drawText('Treatment Plan:', {
-        x: 160,
-        y: yPosition,
-        size: textSize + 2,
-        font: regularFont,
-        color: textColor
-      });
-      
-      yPosition -= 25;
-      
-      // Draw each treatment plan step
-      for (let index = 0; index < data.treatmentPlan.length; index++) {
-        const step = data.treatmentPlan[index];
-        
-        if (yPosition < 180) {
-          const [newPage] = await pdfDoc.copyPages(medicineDoc, [0]);
-          pdfDoc.addPage(newPage);
-          currentPage = newPage;
-          yPosition = currentPage.getHeight() - 100;
+        page.drawText(`${i + 1}`, { x: colSno + 4, y: y + 4, size: 9, font: regularFont, color: rgb(0, 0, 0) });
+        let nyRow = y + 4;
+        for (const nl of nameLines) {
+          page.drawText(nl, { x: colName + 4, y: nyRow, size: 9, font: regularFont, color: rgb(0, 0, 0) });
+          nyRow -= 13;
         }
-        
-        const stepText = `${index + 1}. ${step}`;
-        const stepLines = splitTextIntoLines(stepText, regularFont, textSize, 450);
-        
-        stepLines.forEach((line) => {
-          currentPage.drawText(line, {
-            x: 180,
-            y: yPosition,
-            size: textSize,
-            font: regularFont,
-            color: textColor
-          });
-          yPosition -= 20;
-        });
+        page.drawText(med.dosage || '—', { x: colDos + 4, y: y + 4, size: 9, font: regularFont, color: rgb(0, 0, 0) });
+        page.drawText(med.duration || '—', { x: colDur + 4, y: y + 4, size: 9, font: regularFont, color: rgb(0, 0, 0) });
+        y -= rowHeight;
       }
+      y -= 8;
     }
 
-    //Add advice on the same page
-    currentPage.drawText('Advice:', {
-      x: 160,
-      y: 155,
-      size: textSize + 2,
-      font: regularFont,
-      color: textColor
-    });
+    if (data.advice) drawSection('ADVICE / INSTRUCTIONS', data.advice);
+    if (data.followupDate) drawSection('NEXT APPOINTMENT', formatDate(data.followupDate));
 
-    currentPage.drawText(data.advice || 'No specific advice', {
-      x: 222,
-      y: 155,
-      size: textSize,
-      font: regularFont,
-      color: textColor
-    });
+    // Signature block
+    const sigY = Math.min(y - 30, 160);
+    const sigBlockX = PAGE_W - MARGIN_R - 160;
 
-    // Add follow-up on the same page
-    currentPage.drawText('Follow-up:', {
-      x: 160,
-      y: 116,
-      size: textSize + 2,
-      font: regularFont,
-      color: textColor    });    const followupText = data.followupDate ? 
-      new Date(data.followupDate).toLocaleDateString('en-GB', { 
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      }) : 'No follow-up scheduled';
+    if (signImage) {
+      const imgDims = signImage.scaleToFit(110, 55);
+      page.drawImage(signImage, {
+        x: sigBlockX + (160 - imgDims.width) / 2,
+        y: sigY,
+        width: imgDims.width,
+        height: imgDims.height,
+      });
+    }
 
-    currentPage.drawText(followupText, {
-      x: 225,
-      y: 116,
-      size: textSize,
-      font: regularFont,
-      color: textColor
-    });
-    
-    // Serialize the PDFDocument to bytes
+    const sigLabelY = sigY - 14;
+    const sigLabel = "Doctor's Signature";
+    const sigLabelW = boldFont.widthOfTextAtSize(sigLabel, 9);
+    page.drawText(sigLabel, { x: sigBlockX + (160 - sigLabelW) / 2, y: sigLabelY, size: 9, font: boldFont, color: rgb(0, 0, 0) });
+    const consLabel = 'Consultant';
+    const consLabelW = regularFont.widthOfTextAtSize(consLabel, 8.5);
+    page.drawText(consLabel, { x: sigBlockX + (160 - consLabelW) / 2, y: sigLabelY - 12, size: 8.5, font: regularFont, color: rgb(0.3, 0.3, 0.3) });
+
     const pdfBytes = await pdfDoc.save();
-    
-    // Return the PDF as response with proper type conversion
+
     return new NextResponse(Buffer.from(pdfBytes), {
       headers: {
         'Content-Type': 'application/pdf',
@@ -400,22 +285,12 @@ export async function POST(req: NextRequest) {
         'Access-Control-Allow-Headers': 'Content-Type',
       },
     });
-    
   } catch (error) {
     console.error('Error generating prescription PDF:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate prescription PDF' },
-      { 
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      }
-    );
+    return NextResponse.json({ error: 'Failed to generate prescription PDF' }, { status: 500 });
   }
 }
 
-// Add OPTIONS handler for CORS
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
@@ -425,54 +300,4 @@ export async function OPTIONS() {
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
-}
-
-// Helper function to add a new page with header
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function addNewPage(pdfDoc: PDFDocument, font: PDFFont): PDFPage {
-  const newPage = pdfDoc.addPage();
-  
-  // Add header to new page
-  newPage.drawText('KS Dental & Aesthetics', {
-    x: newPage.getWidth() / 2 - 100,
-    y: newPage.getHeight() - 50,
-    size: 14,
-    font,
-    color: rgb(0, 0, 0)
-  });
-  
-  newPage.drawText('Prescription Continued', {
-    x: newPage.getWidth() / 2 - 80,
-    y: newPage.getHeight() - 70,
-    size: 12,
-    font,
-    color: rgb(0, 0, 0)
-  });
-  
-  return newPage;
-}
-
-// Helper function to split text into lines of appropriate width
-function splitTextIntoLines(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
-  const words = text.split(' ');
-  const lines: string[] = [];
-  let currentLine = '';
-  
-  for (const word of words) {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    const lineWidth = font.widthOfTextAtSize(testLine, fontSize);
-    
-    if (lineWidth <= maxWidth) {
-      currentLine = testLine;
-    } else {
-      lines.push(currentLine);
-      currentLine = word;
-    }
-  }
-  
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-  
-  return lines;
 }

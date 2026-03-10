@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { getPrescriptionById } from '@/services/prescription';
 
 interface ToothData {
@@ -419,6 +420,13 @@ function PrintPrescriptionContent() {
             <div className="sig-line">&nbsp;</div>
           </div>
           <div className="sig-block" style={{ textAlign: 'center' }}>
+            <Image
+              src="/sign.png"
+              alt="Doctor's Signature"
+              width={120}
+              height={60}
+              style={{ objectFit: 'contain', marginBottom: '4px' }}
+            />
             <div className="sig-label">Doctor&apos;s Signature</div>
             <div className="sig-title">Consultant</div>
           </div>

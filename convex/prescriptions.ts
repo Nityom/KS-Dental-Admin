@@ -77,6 +77,14 @@ export const listByPatient = query({
     },
 });
 
+export const getLatestByPhone = query({
+    args: { phone_number: v.string() },
+    handler: async (ctx, args) => {
+        const prescriptions = await ctx.db.query("prescriptions").order("desc").collect();
+        return prescriptions.find((p) => p.phone_number === args.phone_number) || null;
+    },
+});
+
 export const remove = mutation({
     args: { id: v.id("prescriptions") },
     handler: async (ctx, args) => {

@@ -4,14 +4,14 @@ export const signUpWithEmail = async (email: string, password: string) => {
 
 export const signInWithEmail = async (email: string, password: string) => {
   // Hardcoded values for login
-  if (email === "admin@ekdant.com" && password === "admin123") {
+  if (email === "admin@ksdental.com" && password === "Admin@123") {
     if (typeof window !== 'undefined') {
       localStorage.setItem('isAuthenticated', 'true');
     }
     return { success: true, user: { email, role: "admin" } };
   }
 
-  throw new Error("Invalid credentials. Please use admin@ekdant.com / admin123");
+  throw new Error("Invalid credentials. Please use admin@ksdental.com / Admin@123");
 };
 
 export const signOut = async () => {
@@ -25,7 +25,7 @@ export const getCurrentUser = async () => {
   if (typeof window !== 'undefined') {
     const isAuth = localStorage.getItem('isAuthenticated');
     if (isAuth === 'true') {
-      return { email: "admin@ekdant.com", role: "admin", name: "Administrator" };
+      return { email: "admin@ksdental.com", role: "admin", name: "Administrator" };
     }
   }
   return null;
