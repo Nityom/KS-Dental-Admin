@@ -264,8 +264,8 @@ const PrescriptionPage = () => {
           // Prefill M/H from the latest prescription for this patient
           try {
             const latestRx = await convexClient.query(api.prescriptions.getLatestByPhone, { phone_number: phoneNumber });
-            if (latestRx && latestRx.medical_history) {
-              setFormData(prevData => ({ ...prevData, mh: latestRx.medical_history }));
+            if (latestRx?.medical_history) {
+              setFormData(prevData => ({ ...prevData, mh: latestRx.medical_history ?? '' }));
             }
           } catch (rxError) {
             console.error('Error fetching latest prescription for M/H prefill:', rxError);
