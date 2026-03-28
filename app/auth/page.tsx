@@ -55,9 +55,9 @@ const DantsriAdminLogin: React.FC = () => {
             <rect x="52" y="35" width="4" height="25" rx="2" fill="white" />
             <rect x="60" y="40" width="4" height="20" rx="2" fill="white" />
           </svg>
-          <h1 className="text-4xl font-bold text-white mb-6">KS Dental & Aesthetics</h1>
+          <h1 className="text-4xl font-bold text-white mb-6">KS Dental & Aesthetic Clinic</h1>
           <p className="text-gray-300 text-lg leading-relaxed mb-8">
-            Welcome to the KS Dental & Aesthetics administration portal. Manage appointments, patient records, and clinic operations with ease.
+            Welcome to the KS Dental & Aesthetic Clinic administration portal. Manage appointments, patient records, and clinic operations with ease.
           </p>
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-black p-4 rounded-lg border border-gray-800 shadow-lg transform transition-all duration-300 hover:scale-105 hover:border-white group">
@@ -166,7 +166,7 @@ const DantsriAdminLogin: React.FC = () => {
               </div>
             </div>
             
-            <div className="flex items-center justify-between">
+            <div className="flex items-center">
               <div className="flex items-center">
                 <input
                   id="remember-me"
@@ -177,12 +177,6 @@ const DantsriAdminLogin: React.FC = () => {
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                   Remember me
                 </label>
-              </div>
-              
-              <div className="text-sm">
-                <a href="#" className="font-medium text-gray-700 hover:text-black transition-colors duration-200 border-b border-transparent hover:border-black">
-                  Forgot password?
-                </a>
               </div>
             </div>
             

@@ -17,14 +17,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 const user = await getCurrentUser();
                 
                 if (!user) {
-                    router.push('/');
+                    router.push('/auth/login');
                     return;
                 }
                 
                 setIsAuthenticated(true);
             } catch (error) {
                 console.error('Auth error:', error);
-                router.push('/login');
+                router.push('/auth/login');
             } finally {
                 setIsLoading(false);
             }

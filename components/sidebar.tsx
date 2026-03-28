@@ -123,7 +123,7 @@ export function AppSidebar({ children }: { children?: React.ReactNode }): React.
         const user = await getCurrentUser();
         
         if (!user) {
-          router.push('/');
+          router.push('/auth/login');
           return;
         }
         
@@ -132,7 +132,7 @@ export function AppSidebar({ children }: { children?: React.ReactNode }): React.
         }
       } catch (error) {
         console.error('Auth error:', error);
-        router.push('/login');
+        router.push('/auth/login');
       }
     };
 

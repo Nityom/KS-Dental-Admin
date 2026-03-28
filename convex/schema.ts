@@ -5,7 +5,50 @@ export default defineSchema({
   users: defineTable({
     email: v.string(),
     password_hash: v.string(),
+    name: v.optional(v.string()),
+    role: v.optional(v.string()),
+    is_active: v.optional(v.boolean()),
+    last_login_at: v.optional(v.number()),
+    created_at: v.optional(v.number()),
+    updated_at: v.optional(v.number()),
   }).index("by_email", ["email"]),
+
+  auth_otp_sessions: defineTable({
+    user_id: v.id("users"),
+    email: v.string(),
+    otp_hash: v.string(),
+    expires_at: v.number(),
+    attempts: v.number(),
+    max_attempts: v.number(),
+    used: v.boolean(),
+    purpose: v.union(v.literal("login")),
+    created_at: v.number(),
+  })
+    .index("by_email", ["email"])
+    .index("by_expires", ["expires_at"]),
+
+  password_reset_tokens: defineTable({
+    user_id: v.id("users"),
+    email: v.string(),
+    token_hash: v.string(),
+    expires_at: v.number(),
+    used: v.boolean(),
+    created_at: v.number(),
+  })
+    .index("by_token_hash", ["token_hash"])
+    .index("by_email", ["email"])
+    .index("by_expires", ["expires_at"]),
+
+  auth_sessions: defineTable({
+    user_id: v.id("users"),
+    session_hash: v.string(),
+    expires_at: v.number(),
+    revoked: v.boolean(),
+    created_at: v.number(),
+  })
+    .index("by_session_hash", ["session_hash"])
+    .index("by_expires", ["expires_at"])
+    .index("by_user", ["user_id"]),
 
   patients: defineTable({
     reference_number: v.string(),

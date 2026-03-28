@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
     let y = PAGE_H - 40;
 
     // Header
-    const clinicName = 'Ekdant Dental Clinic';
+    const clinicName = 'KS Dental & Aesthetic Clinic';
     const clinicNameW = boldFont.widthOfTextAtSize(clinicName, 18);
     page.drawText(clinicName, {
       x: (PAGE_W - clinicNameW) / 2, y,

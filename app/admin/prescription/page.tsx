@@ -15,9 +15,11 @@ import { ConvexHttpClient } from 'convex/browser';
 // @ts-ignore
 import { api } from '@/convex/_generated/api';
 
-const convexClient = new ConvexHttpClient(
-  process.env.NEXT_PUBLIC_CONVEX_URL || 'https://laudable-pony-598.convex.cloud'
-);
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+if (!convexUrl) {
+  throw new Error('NEXT_PUBLIC_CONVEX_URL is not configured.');
+}
+const convexClient = new ConvexHttpClient(convexUrl);
 
 interface MedicineEntry {
   name: string;

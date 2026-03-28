@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { updatePassword } from "@/services/adminuser";
@@ -21,6 +21,8 @@ export default function ResetPassword() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token") || "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,8 +43,14 @@ export default function ResetPassword() {
       return;
     }
 
+    if (!token) {
+      setError("Reset link is invalid or missing token. Please request a new reset link.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      await updatePassword(password);
+      await updatePassword(password, token);
       setSuccess(true);
       
       // Redirect to login after 3 seconds

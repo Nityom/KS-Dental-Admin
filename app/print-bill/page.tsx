@@ -7,9 +7,11 @@ import { ConvexHttpClient } from 'convex/browser';
 // @ts-ignore
 import { api } from '@/convex/_generated/api';
 
-const convex = new ConvexHttpClient(
-  process.env.NEXT_PUBLIC_CONVEX_URL || 'https://laudable-pony-598.convex.cloud'
-);
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+if (!convexUrl) {
+  throw new Error('NEXT_PUBLIC_CONVEX_URL is not configured.');
+}
+const convex = new ConvexHttpClient(convexUrl);
 
 interface BillItem {
   id?: number;
