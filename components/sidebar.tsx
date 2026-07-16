@@ -4,7 +4,7 @@ import { Inbox, Menu, X, ChevronRight, Pill, FileText, LogOut, Wrench, TrendingU
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, signOut } from "@/services/adminuser";
 
-interface CustomSidebarProps {  
+interface CustomSidebarProps {
   children: React.ReactNode;
   className?: string;
 }
@@ -50,11 +50,10 @@ const MenuItem: React.FC<MenuItemProps> = ({ icon: Icon, title, url, isActive, o
   <li className="mb-2 px-2">
     <a
       href="#"
-      className={`flex items-center justify-start w-full p-3 rounded-lg transition-all duration-300 ${
-        isActive
+      className={`flex items-center justify-start w-full p-3 rounded-lg transition-all duration-300 ${isActive
           ? 'bg-gradient-to-r from-blue-600 to-indigo-500 text-white shadow-md'
           : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
-      }`}
+        }`}
       onClick={(e) => {
         e.preventDefault();
         onClick(id, url);
@@ -121,12 +120,12 @@ export function AppSidebar({ children }: { children?: React.ReactNode }): React.
     const checkAuth = async () => {
       try {
         const user = await getCurrentUser();
-        
+
         if (!user) {
           router.push('/auth/login');
           return;
         }
-        
+
         if (user.email) {
           setUserEmail(user.email);
         }
@@ -139,9 +138,9 @@ export function AppSidebar({ children }: { children?: React.ReactNode }): React.
     checkAuth();
     checkViewport();
     window.addEventListener('resize', checkViewport);
-    
+
     setTimeout(() => setAnimateItems(true), 100);
-    
+
     return () => window.removeEventListener('resize', checkViewport);
   }, [router]);
 
@@ -160,10 +159,10 @@ export function AppSidebar({ children }: { children?: React.ReactNode }): React.
     try {
       // Set active item
       setActiveItem(id);
-      
+
       // Use router.push with proper error handling
       await router.push(url);
-      
+
       // Close sidebar on mobile after navigation
       if (isMobile) {
         setIsExpanded(false);
@@ -194,7 +193,7 @@ export function AppSidebar({ children }: { children?: React.ReactNode }): React.
         <div
           className="fixed inset-0 backdrop-blur-sm bg-white/10 z-20"
           onClick={() => setIsExpanded(false)}
-          style={{animation: 'fadeIn 0.3s ease forwards'}}
+          style={{ animation: 'fadeIn 0.3s ease forwards' }}
         />
       )}
 
@@ -217,7 +216,7 @@ export function AppSidebar({ children }: { children?: React.ReactNode }): React.
               <div className="flex flex-col ml-1 w-auto">
                 <div className="flex items-baseline mb-0.5 gap-2">
                   <span className="text-[#4EBAED] text-2xl font-black uppercase tracking-tight leading-none">
-                    KS DENTAL
+                    Shahi Dental
                   </span>
                 </div>
                 <div className="flex items-center w-full mt-1">
@@ -270,7 +269,7 @@ export function AppSidebar({ children }: { children?: React.ReactNode }): React.
                   <p className="text-sm text-white truncate">{userEmail}</p>
                 </div>
               </div>
-              
+
               <button
                 onClick={handleLogout}
                 className="flex items-center space-x-2 p-3 rounded-lg text-gray-300 hover:bg-red-500/20 hover:text-red-400 transition-all duration-300"

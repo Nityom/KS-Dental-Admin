@@ -1,4 +1,4 @@
-# 🚀 Setup Instructions - KS Dental Clinic
+# 🚀 Setup Instructions - Shahi Dental Clinic
 
 Follow these steps to set up your application with PHP + MySQL backend.
 

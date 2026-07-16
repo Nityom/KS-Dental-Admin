@@ -1,6 +1,6 @@
 @echo off
 echo ================================
-echo Starting KS Dental Clinic
+echo Starting Shahi Dental Clinic
 echo ================================
 echo.
 echo Starting PHP Backend on port 8000...
